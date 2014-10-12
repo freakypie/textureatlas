@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2014 Matthew Borgerson
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,6 +33,7 @@
 
 #define TEXTURE_ATLAS_MAP_FILE_MAGIC 0x41584554
 
+#pragma pack(1)
 typedef struct _texture_atlas_map_file_header_t {
     unsigned int magic;
     unsigned int width;
@@ -45,19 +46,22 @@ typedef struct _texture_atlas_map_file_header_t {
     unsigned int frm_section_offset;
     unsigned int frm_section_len;
 } texture_atlas_map_file_header_t;
+#pragma pack()
 
+#pragma pack(1)
 typedef struct _texture_atlas_map_file_texture_t
 {
     unsigned int name;
     unsigned int num_frames;
     unsigned int frames;
 } texture_atlas_map_file_texture_t;
+#pragma pack()
 
 /*!
  * \brief Loads the binary texture atlas .map file at \a path.
  *
- * Note: Memory is allocated by this call. It is the caller's responsibility to
- *       free() the memory.
+ * Note: Memory is allocated by this call. \c texture_atlas_free should be
+ *       called when the texture atlas is no longer needed.
  */
 int
 texture_atlas_load(
@@ -160,6 +164,17 @@ texture_atlas_load(
     }
 
     fclose(fd);
+    return 0;
+}
+
+/*!
+ * \brief Frees the resources allocated by this texture atlas.
+ */
+int
+texture_atlas_free(
+    texture_atlas_t *ta)
+{
+    free(ta);
     return 0;
 }
 

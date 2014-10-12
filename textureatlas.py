@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 #
 # Copyright (c) 2014 Matthew Borgerson
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -63,7 +63,7 @@ class Packable(object):
     @property
     def height(self):
         return self._height
-    
+
     @property
     def perimeter(self):
         return 2*self._width + 2*self._height
@@ -100,7 +100,7 @@ class PackRegion(object):
     @property
     def packable(self):
         return self._packable
-    
+
     def get_all_packables(self):
         """Returns a list of all Packables in this region and sub-regions."""
         if self._packable:
@@ -143,7 +143,7 @@ class Frame(Packable):
     def __init__(self, filename):
         self._filename = filename
 
-        # Determine frame dimensions 
+        # Determine frame dimensions
         image = Image.open(filename)
         width, height = image.size
         del image
@@ -216,9 +216,9 @@ class BinaryTextureAtlasMap(TextureAtlasMap):
 
     The binary atlas map is composed of four sections. The first section is the
     header. The second section contains the details of each texture (name,
-    dimensions, etc). The third section contains null-terminated strings
-    referenced by other sections. The fourth section contains the coordinates of
-    all texture frames.
+    number of frames, etc.). The third section contains all null-terminated
+    strings referenced by other sections. The fourth section contains the
+    coordinates and dimensions of all texture frames.
 
     HEADER FORMAT
 
@@ -226,7 +226,7 @@ class BinaryTextureAtlasMap(TextureAtlasMap):
     ------ ---- -----------
     0      4    Magic ('TEXA' = 0x41584554)
     4      4    Texture Atlas Width
-    8      4    Texture Atlas Height 
+    8      4    Texture Atlas Height
     12     4    Number of Textures
     16     4    Texture Section Offset
     20     4    Texture Section Size
@@ -261,7 +261,7 @@ class BinaryTextureAtlasMap(TextureAtlasMap):
         # Calculate offset and size of each section
         hdr_fmt = 'IIIIIIIII'
         hdr_fmt_len = struct.calcsize(hdr_fmt)
-        hdr_section_len = 4+hdr_fmt_len
+        hdr_section_len = hdr_fmt_len+4 # Header + Magic
 
         tex_fmt = 'III'
         tex_fmt_len = struct.calcsize(tex_fmt)
