@@ -26,6 +26,7 @@ DESCRIPTION = """Packs many smaller images into one larger image, a Texture
 Atlas. A companion file (.map), is created that defines where each texture is
 mapped in the atlas."""
 
+import json
 import PIL.Image as Image
 import argparse
 import os.path
@@ -45,6 +46,7 @@ class Packable(object):
     @property
     def x(self):
         return self._x
+
     @x.setter
     def x(self, value):
         self._x = value
@@ -52,6 +54,7 @@ class Packable(object):
     @property
     def y(self):
         return self._y
+
     @y.setter
     def y(self, value):
         self._y = value
@@ -67,6 +70,7 @@ class Packable(object):
     @property
     def perimeter(self):
         return 2*self._width + 2*self._height
+
 
 class PackRegion(object):
     """A region that two-dimensional Packable objects can be packed into."""
@@ -137,6 +141,7 @@ class PackRegion(object):
         # Pack into sub-region
         return self._sub1.pack(packable) or self._sub2.pack(packable)
 
+
 class Frame(Packable):
     """An image file that can be packed into a PackRegion."""
 
@@ -160,6 +165,7 @@ class Frame(Packable):
         image.paste(i, (self.x, self.y))
         del i
 
+
 class Texture(object):
     """A collection of one or more frames."""
 
@@ -174,6 +180,7 @@ class Texture(object):
     @property
     def frames(self):
         return self._frames
+
 
 class TextureAtlas(PackRegion):
     """Texture Atlas generator."""
@@ -201,6 +208,7 @@ class TextureAtlas(PackRegion):
                 f.draw(out)
         out.save(filename)
 
+
 class TextureAtlasMap(object):
     """Texture Atlas Map file generator."""
 
@@ -210,6 +218,42 @@ class TextureAtlasMap(object):
     def write(self, fd):
         """Writes the texture atlas map file into file object fd."""
         raise Exception('Not Implemented')
+
+
+class JsonTextureAtlasMap(TextureAtlasMap):
+
+    def __init__(self, atlas):
+        super(JsonTextureAtlasMap, self).__init__(atlas)
+
+    def write(self, fd):
+        for t in self._atlas.textures:
+            for f in t.frames:
+                print(dir(f))
+        data = dict(
+            meta=dict(
+                width=self._atlas.width,
+                height=self._atlas.height,
+                textures=len(self._atlas.textures),
+            ),
+            textures=[
+                dict(
+                    name=t.name,
+                    frames=[
+                        dict(
+                            x=f.x,
+                            y=f.y,
+                            width=f.width,
+                            height=f.height,
+                            name=os.path.basename(f.filename)
+                        )
+                        for f in t.frames
+                    ]
+                )
+                for t in self._atlas.textures
+            ]
+        )
+        return json.dump(data, fd)
+
 
 class BinaryTextureAtlasMap(TextureAtlasMap):
     """Binary Texture Atlas Map file generator.
@@ -269,12 +313,12 @@ class BinaryTextureAtlasMap(TextureAtlasMap):
         tex_section_len = len(self._atlas.textures)*tex_fmt_len
 
         str_section_off = tex_section_off+tex_section_len
-        str_section_len = sum(map(lambda t:len(t.name)+1, self._atlas.textures))
+        str_section_len = sum(map(lambda t: len(t.name)+1, self._atlas.textures))
 
         frm_fmt = 'IIII'
         frm_fmt_len = struct.calcsize(frm_fmt)
         frm_section_off = str_section_off + str_section_len
-        frm_section_len = sum(map(lambda t:len(t.frames), self._atlas.textures))
+        frm_section_len = sum(map(lambda t: len(t.frames), self._atlas.textures))
         frm_section_len *= frm_fmt_len
 
         # Write Header
@@ -308,6 +352,7 @@ class BinaryTextureAtlasMap(TextureAtlasMap):
                                               f.width,
                                               f.height))
 
+
 def main():
     # Parse arguments
     arg_parser = argparse.ArgumentParser(description=DESCRIPTION,
@@ -338,7 +383,7 @@ def main():
     filename, ext = os.path.splitext(args.outfile)
 
     if ext == '':
-        print 'Error: Specify an image extension for outfile (e.g. atlas.png).'
+        print('Error: Specify an image extension for outfile (e.g. atlas.png).')
         exit(1)
 
     # Parse texture names
@@ -358,7 +403,7 @@ def main():
         textures.append(Texture(name, frames))
 
     # Sort textures by perimeter size in non-increasing order
-    textures = sorted(textures, key=lambda i:i.frames[0].perimeter, reverse=True)
+    textures = sorted(textures, key=lambda i: i.frames[0].perimeter, reverse=True)
 
     # Create the atlas and pack textures in
     atlas = TextureAtlas(args.size, args.size)
@@ -368,8 +413,10 @@ def main():
 
     # Write atlas and map file
     atlas.write(args.outfile, args.mode)
-    f = open(filename+'.map', 'wb')
-    BinaryTextureAtlasMap(atlas).write(f)
+    f = open(filename+'.json', 'w')
+    # f = open(filename+'.map', 'wb')
+    # BinaryTextureAtlasMap(atlas).write(f)
+    JsonTextureAtlasMap(atlas).write(f)
     f.close()
 
 if __name__ == '__main__':
